@@ -12,4 +12,6 @@ import { existsSync } from "https://deno.land/std@0.170.0/fs/mod.ts";
     const db = new Database(config);
     
     db.serve();
+
+    db.repl();
 })();

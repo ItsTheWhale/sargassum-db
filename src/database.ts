@@ -27,13 +27,24 @@ export class Database {
                 } else if (message.toLowerCase() === "commit") {
                     transaction?.commit();
                 } else {
-                    transaction?.addStatement(message);  
+                    transaction?.addStatement(message);
                 }
             });
-            
+
             ws.on("close", function () {
 
             });
+        });
+    }
+
+    repl() {
+        console.log("SargassumDB REPL");
+        setInterval(() => {
+            const statement = prompt(">>>") ?? "";
+            let transaction: Transaction | null = new Transaction();
+            transaction?.addStatement(statement);
+            transaction?.commit();
+            transaction = null;
         });
     }
 }
