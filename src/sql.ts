@@ -102,6 +102,8 @@ export const SqlWhitespaces = [
 export class Parser {
     statement = "";
 
+    error = false;
+
     tokens: Array<{
         type: SqlTokens,
         text: string
@@ -116,6 +118,8 @@ export class Parser {
 
     tokenize(): void {
         for (let c = 0; c < this.statement.length; c++) {
+            if (this.error) break;
+            
             const char = this.statement[c];
             if (c !== 0) this.advance();
 
@@ -133,7 +137,10 @@ export class Parser {
                     // Is it the end of the string?
                     if (char.match(/"/)) {
                         this.cut(SqlTokens.Identifier);
-                    } else SqlException("Unterminated string literal");
+                    } else {
+                        SqlException("Unterminated string literal");
+                        this.error = true;
+                    }
                     // Is it a space
                 } else if (this.selected().length === 1 && char.match(/\s/)) {
                     this.skip();
