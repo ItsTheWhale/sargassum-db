@@ -1,3 +1,5 @@
+import { Parser } from "./sql.ts";
+
 export class Transaction {
     statements: string[] = [];
 
@@ -10,6 +12,12 @@ export class Transaction {
     }
 
     commit(): boolean {
+        console.log('comit')
+        console.log(this.statements);
+        for (const statement of this.statements) {
+            const parser = new Parser(statement);
+            parser.tokenize();
+        }
         return true;
     }
 }
