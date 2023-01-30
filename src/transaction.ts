@@ -16,7 +16,7 @@ export class Transaction {
         console.log(this.statements);
         for (const statement of this.statements) {
             const parser = new Parser(statement);
-            parser.tokenize();
+            parser.eval();
         }
         return true;
     }

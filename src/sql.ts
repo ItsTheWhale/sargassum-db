@@ -109,99 +109,112 @@ export class Parser {
         text: string
     }> = [];
 
-    startpos = 0;
-    position = 0;
-
     constructor(statement: string) {
         this.statement = statement;
     }
 
     tokenize(): void {
-        for (let c = 0; c < this.statement.length; c++) {
+        const statement = this.statement;
+
+        let tokens: Array<{
+            type: SqlTokens,
+            text: string
+        }> = [];
+
+        let startpos = 0;
+        let position = 0;
+
+
+        function advance(): void {
+            position++;
+        }
+
+        function skip(): void {
+            startpos = position + 1;
+        }
+
+        function peek(index: number): string {
+            return statement[position + index] ?? undefined;
+        }
+
+        function selected(): string {
+            return statement.substring(startpos, position + 1);
+        }
+
+        function cut(tokenType: SqlTokens): void {
+            tokens.push({
+                type: tokenType,
+                text: statement.substring(startpos, position + 1)
+            });
+
+            startpos = position + 1;
+        }
+
+        for (let c = 0; c < statement.length; c++) {
             if (this.error) break;
-            
-            const char = this.statement[c];
-            if (c !== 0) this.advance();
+
+            const char = statement[c];
+            if (c !== 0) advance();
 
             // Is it whitespace?
-            if (this.selected().length === 1 && SqlWhitespaces.includes(char)) {
-                this.skip();
+            if (selected().length === 1 && SqlWhitespaces.includes(char)) {
+                skip();
 
                 // Handle end of statement
-            } else if (this.peek(1) === undefined) {
+            } else if (peek(1) === undefined) {
                 // Is it nothing
-                if (this.selected() === "") {
-                    this.skip();
+                if (selected() === "") {
+                    skip();
                     // Is it a string
-                } else if (this.selected()[0].match(/"/)) {
+                } else if (selected()[0].match(/"/)) {
                     // Is it the end of the string?
                     if (char.match(/"/)) {
-                        this.cut(SqlTokens.Identifier);
+                        cut(SqlTokens.Identifier);
                     } else {
                         SqlException("Unterminated string literal");
                         this.error = true;
                     }
                     // Is it a space
-                } else if (this.selected().length === 1 && char.match(/\s/)) {
-                    this.skip();
+                } else if (selected().length === 1 && char.match(/\s/)) {
+                    skip();
                     // Is it a keyword
-                } else if (SqlKeywords.includes(this.selected().toLowerCase())) {
-                    this.cut(SqlTokens.Keyword);
+                } else if (SqlKeywords.includes(selected().toLowerCase())) {
+                    cut(SqlTokens.Keyword);
                     // Otherwise, an identifier
                 } else {
-                    this.cut(SqlTokens.Identifier);
+                    cut(SqlTokens.Identifier);
                 }
 
                 // Is it an operator?
-            } else if (SqlOperators.includes(this.selected().toLowerCase())) {
-                this.cut(SqlTokens.Operator);
+            } else if (SqlOperators.includes(selected().toLowerCase())) {
+                cut(SqlTokens.Operator);
 
                 // Handle whitespace
-            } else if (this.peek(1).match(/\s/)) {
+            } else if (peek(1).match(/\s/)) {
                 // Is the space in a string?
-                if (this.selected()[0].match(/"/)
+                if (selected()[0].match(/"/)
                 ) {
                     // Is it the end of the string?
                     if (char.match(/"/)) {
-                        this.cut(SqlTokens.Delimiter);
+                        cut(SqlTokens.Delimiter);
                     } else continue;
                     // Is the space empty?
-                } else if (this.selected().length === 1) {
-                    this.skip();
+                } else if (selected().length === 1) {
+                    skip();
                     // Is selected a keyword?
-                } else if (SqlKeywords.includes(this.selected().toLowerCase())) {
-                    this.cut(SqlTokens.Keyword);
+                } else if (SqlKeywords.includes(selected().toLowerCase())) {
+                    cut(SqlTokens.Keyword);
                     // Otherwise, an identifier
                 } else {
-                    this.cut(SqlTokens.Identifier);
+                    cut(SqlTokens.Identifier);
                 }
             }
         }
+        this.tokens = tokens;
+    }
+
+    eval(): void {
+        this.tokenize();
         console.log(this.tokens);
-    }
-
-    advance(): void {
-        this.position++;
-    }
-
-    skip(): void {
-        this.startpos = this.position + 1;
-    }
-
-    peek(index: number): string {
-        return this.statement[this.position + index] ?? undefined;
-    }
-
-    selected(): string {
-        return this.statement.substring(this.startpos, this.position + 1);
-    }
-
-    cut(tokenType: SqlTokens): void {
-        this.tokens.push({
-            type: tokenType,
-            text: this.statement.substring(this.startpos, this.position + 1)
-        });
-
-        this.startpos = this.position + 1;
     }
 }
